@@ -14,8 +14,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Use a fun, kid-friendly font */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrolling on the body itself */
+        }
         body {
             font-family: 'Baloo 2', cursive;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         /* Simple animation for incorrect answers */
         @keyframes shake {
@@ -37,7 +46,8 @@
         }
         /* Make emoji in image box larger for smartboard */
         .emoji-image {
-            font-size: 140px;
+            font-size: 10vw; /* Responsive font size */
+            max-font-size: 140px;
             line-height: 1;
         }
         /* Styling for active and inactive tabs */
@@ -47,7 +57,7 @@
         
         /* Styles for the sort game */
         .sort-column {
-            min-height: 300px;
+            min-height: 20vh; /* Use viewport height for flexibility */
             transition: background-color 0.2s ease-in-out;
         }
         .sorted-word {
@@ -68,82 +78,96 @@
 
         /* Fullscreen styles */
         :fullscreen, ::-webkit-full-screen, ::-ms-fullscreen {
-            overflow-y: auto !important; /* Allow scrolling if content overflows on smaller screens */
+            overflow-y: hidden !important; /* Ensure no scrolling in fullscreen */
+        }
+        .view-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .flexible-content {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
-<body class="bg-sky-200 flex items-center justify-center min-h-screen p-4">
+<body class="bg-sky-200 p-4">
 
-    <div id="main-container" class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center relative">
+    <div id="main-container" class="w-full max-w-5xl h-full mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-8 text-center flex flex-col">
         
         <!-- Tabs for navigation -->
-        <div class="flex border-b mb-6">
-            <button id="game-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Game</button>
-            <button id="sentence-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Sentences</button>
-            <button id="sort-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Blend Sort</button>
-            <button id="passage-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Passages</button>
+        <div class="flex border-b mb-4 flex-shrink-0">
+            <button id="game-tab" class="tab flex-1 py-2 text-xl md:text-2xl font-bold border-b-4">Game</button>
+            <button id="sentence-tab" class="tab flex-1 py-2 text-xl md:text-2xl font-bold border-b-4">Sentences</button>
+            <button id="sort-tab" class="tab flex-1 py-2 text-xl md:text-2xl font-bold border-b-4">Blend Sort</button>
+            <button id="passage-tab" class="tab flex-1 py-2 text-xl md:text-2xl font-bold border-b-4">Passages</button>
         </div>
 
         <!-- Game View -->
-        <div id="game-view">
-            <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-2">Beginning Blends!</h1>
-            <p id="progress-text" class="text-gray-500 text-xl mb-6">Word 1 of 25</p>
-            <div id="image-container" class="bg-gray-100 rounded-xl p-4 mb-6 h-64 flex items-center justify-center"></div>
-            <div id="word-display" class="text-5xl md:text-7xl font-bold tracking-widest text-gray-800 mb-8 h-24 flex items-center justify-center"></div>
-            <div id="blend-buttons" class="grid grid-cols-3 gap-4 md:gap-6 mb-8"></div>
-            <div id="feedback-container" class="h-14">
-                 <p id="feedback-text" class="text-3xl font-bold"></p>
+        <div id="game-view" class="view-container">
+            <div class="flex-shrink-0">
+                <h1 class="text-3xl md:text-5xl font-bold text-orange-500 mb-1">Beginning Blends!</h1>
+                <p id="progress-text" class="text-gray-500 text-lg md:text-xl mb-2">Word 1 of 25</p>
             </div>
-            <button id="next-btn" class="hidden w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Next Word</button>
-            <button id="restart-btn" class="hidden w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Play Again?</button>
+            <div id="image-container" class="bg-gray-100 rounded-xl p-4 my-2 flexible-content"></div>
+            <div class="flex-shrink-0">
+                <div id="word-display" class="text-5xl md:text-7xl font-bold tracking-widest text-gray-800 my-4 h-24 flex items-center justify-center"></div>
+                <div id="blend-buttons" class="grid grid-cols-3 gap-2 md:gap-4 mb-2"></div>
+                <div id="feedback-container" class="h-12">
+                     <p id="feedback-text" class="text-2xl md:text-3xl font-bold"></p>
+                </div>
+                <button id="next-btn" class="hidden w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg text-xl md:text-2xl transition">Next Word</button>
+                <button id="restart-btn" class="hidden w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg text-xl md:text-2xl transition">Play Again?</button>
+            </div>
         </div>
 
         <!-- Sentence View -->
-        <div id="sentence-view" class="hidden">
-             <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-8">Read a Sentence!</h1>
-             <div id="sentence-display-container" class="bg-gray-100 rounded-xl p-6 mb-8 min-h-[400px] flex items-center justify-center">
-                <p id="sentence-display" class="text-3xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
+        <div id="sentence-view" class="hidden view-container">
+             <h1 class="text-3xl md:text-5xl font-bold text-orange-500 mb-4 flex-shrink-0">Read a Sentence!</h1>
+             <div id="sentence-display-container" class="bg-gray-100 rounded-xl p-6 mb-4 flexible-content">
+                <p id="sentence-display" class="text-2xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
              </div>
-             <button id="new-sentence-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">New Sentence</button>
+             <button id="new-sentence-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg text-xl md:text-2xl transition flex-shrink-0">New Sentence</button>
         </div>
         
         <!-- Blend Sort View -->
-        <div id="sort-view" class="hidden">
-            <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-6">Blend Sort</h1>
-            <div class="grid grid-cols-3 gap-4 text-left">
-                <!-- s-blends column -->
-                <div data-category="s" class="drop-zone bg-lime-100 p-4 rounded-lg">
-                    <h2 class="text-2xl font-bold text-lime-800 text-center mb-4">s-blends</h2>
-                    <div id="s-blends-col" class="sort-column space-y-2"></div>
+        <div id="sort-view" class="hidden view-container">
+            <h1 class="text-3xl md:text-5xl font-bold text-orange-500 mb-4 flex-shrink-0">Blend Sort</h1>
+            <div class="grid grid-cols-3 gap-4 text-left flexible-content">
+                <div data-category="s" class="drop-zone bg-lime-100 p-2 md:p-4 rounded-lg flex flex-col h-full">
+                    <h2 class="text-xl md:text-2xl font-bold text-lime-800 text-center mb-2 flex-shrink-0">s-blends</h2>
+                    <div id="s-blends-col" class="sort-column space-y-2 flex-grow overflow-y-auto"></div>
                 </div>
-                <!-- l-blends column -->
-                <div data-category="l" class="drop-zone bg-cyan-100 p-4 rounded-lg">
-                    <h2 class="text-2xl font-bold text-cyan-800 text-center mb-4">l-blends</h2>
-                    <div id="l-blends-col" class="sort-column space-y-2"></div>
+                <div data-category="l" class="drop-zone bg-cyan-100 p-2 md:p-4 rounded-lg flex flex-col h-full">
+                    <h2 class="text-xl md:text-2xl font-bold text-cyan-800 text-center mb-2 flex-shrink-0">l-blends</h2>
+                    <div id="l-blends-col" class="sort-column space-y-2 flex-grow overflow-y-auto"></div>
                 </div>
-                <!-- r-blends column -->
-                <div data-category="r" class="drop-zone bg-fuchsia-100 p-4 rounded-lg">
-                    <h2 class="text-2xl font-bold text-fuchsia-800 text-center mb-4">r-blends</h2>
-                    <div id="r-blends-col" class="sort-column space-y-2"></div>
+                <div data-category="r" class="drop-zone bg-fuchsia-100 p-2 md:p-4 rounded-lg flex flex-col h-full">
+                    <h2 class="text-xl md:text-2xl font-bold text-fuchsia-800 text-center mb-2 flex-shrink-0">r-blends</h2>
+                    <div id="r-blends-col" class="sort-column space-y-2 flex-grow overflow-y-auto"></div>
                 </div>
             </div>
-            <div id="sort-feedback" class="h-14 mt-6">
-                <p id="sort-feedback-text" class="text-3xl font-bold"></p>
+            <div class="flex-shrink-0">
+                <div id="sort-feedback" class="h-12 mt-2">
+                    <p id="sort-feedback-text" class="text-2xl md:text-3xl font-bold"></p>
+                </div>
+                <div id="word-to-sort-container" class="mt-2 p-2">
+                    <p class="text-lg md:text-xl text-gray-600 mb-1">Drag this word:</p>
+                    <p id="word-to-sort" class="text-4xl md:text-6xl font-bold text-gray-800 inline-block bg-gray-200 px-4 py-2 rounded-lg" draggable="true"></p>
+                </div>
+                 <button id="restart-sort-btn" class="hidden mt-4 w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg text-xl md:text-2xl transition">Play Again?</button>
             </div>
-            <div id="word-to-sort-container" class="mt-12 p-6">
-                <p class="text-xl text-gray-600 mb-2">Drag this word:</p>
-                <p id="word-to-sort" class="text-6xl font-bold text-gray-800 inline-block bg-gray-200 px-4 py-2 rounded-lg" draggable="true"></p>
-            </div>
-             <button id="restart-sort-btn" class="hidden mt-6 w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Play Again?</button>
         </div>
         
         <!-- Passage View -->
-        <div id="passage-view" class="hidden">
-             <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-8">Read a Passage</h1>
-             <div id="passage-display-container" class="bg-gray-100 rounded-xl p-8 mb-8 min-h-[400px] flex items-center justify-center text-left">
-                <p id="passage-display" class="text-3xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
+        <div id="passage-view" class="hidden view-container">
+             <h1 class="text-3xl md:text-5xl font-bold text-orange-500 mb-4 flex-shrink-0">Read a Passage</h1>
+             <div id="passage-display-container" class="bg-gray-100 rounded-xl p-6 mb-4 flexible-content text-left">
+                <p id="passage-display" class="text-2xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
              </div>
-             <button id="new-passage-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">New Passage</button>
+             <button id="new-passage-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg text-xl md:text-2xl transition flex-shrink-0">New Passage</button>
         </div>
 
     </div>
@@ -470,24 +494,37 @@
         // --- FULLSCREEN LOGIC (ROBUST VERSION) ---
         function toggleFullScreen() {
             const elem = document.documentElement;
-            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) { /* Safari, Chrome, Opera */
-                    elem.webkitRequestFullscreen();
-                } else if (elem.msRequestFullscreen) { /* IE/Edge */
-                    elem.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
+            const promise = elem.requestFullscreen ? elem.requestFullscreen() : 
+                            elem.webkitRequestFullscreen ? elem.webkitRequestFullscreen() : 
+                            elem.msRequestFullscreen ? elem.msRequestFullscreen() : 
+                            null;
+
+            if (promise) {
+                promise.catch(err => {
+                    // If fullscreen fails (like in an iframe), open in a new tab.
+                    console.warn("Fullscreen request failed, likely due to iframe restrictions. Opening in new tab as a fallback.", err);
+                    window.open(window.location.href, '_blank');
+                });
+            } else if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                 // Fallback for browsers that don't return a promise
+                 window.open(window.location.href, '_blank');
+            }
+
+            if (document.exitFullscreen) {
+                if (document.fullscreenElement) {
                     document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { /* Safari, Chrome, Opera */
+                }
+            } else if (document.webkitExitFullscreen) {
+                if (document.webkitFullscreenElement) {
                     document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE/Edge */
+                }
+            } else if (document.msExitFullscreen) {
+                if (document.msFullscreenElement) {
                     document.msExitFullscreen();
                 }
             }
         }
+
 
         function updateFullscreenIcons() {
             if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
@@ -532,5 +569,3 @@
     </script>
 </body>
 </html>
-
-
