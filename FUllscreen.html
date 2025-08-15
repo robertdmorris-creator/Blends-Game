@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beginning Blends & Sentences</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use a fun, kid-friendly font */
+        body {
+            font-family: 'Baloo 2', cursive;
+        }
+        /* Simple animation for incorrect answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        /* Simple animation for correct answers */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 0.5s;
+        }
+        /* Make emoji in image box larger for smartboard */
+        .emoji-image {
+            font-size: 140px;
+            line-height: 1;
+        }
+        /* Styling for active and inactive tabs */
+        .tab {
+            transition: all 0.3s ease;
+        }
+        
+        /* Styles for the sort game */
+        .sort-column {
+            min-height: 300px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .sorted-word {
+            transition: background-color 0.3s ease;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .drag-over {
+            background-color: #fef3c7; /* A light yellow to show valid drop target */
+        }
+        #word-to-sort {
+            cursor: grab;
+        }
+        #word-to-sort:active {
+            cursor: grabbing;
+        }
+
+        /* Fullscreen styles */
+        :fullscreen, ::-webkit-full-screen, ::-ms-fullscreen {
+            overflow-y: auto !important; /* Allow scrolling if content overflows on smaller screens */
+        }
+    </style>
+</head>
+<body class="bg-sky-200 flex items-center justify-center min-h-screen p-4">
+
+    <div id="main-container" class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center relative">
+        
+        <!-- Tabs for navigation -->
+        <div class="flex border-b mb-6">
+            <button id="game-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Game</button>
+            <button id="sentence-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Sentences</button>
+            <button id="sort-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Blend Sort</button>
+            <button id="passage-tab" class="tab flex-1 py-3 text-2xl font-bold border-b-4">Passages</button>
+        </div>
+
+        <!-- Game View -->
+        <div id="game-view">
+            <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-2">Beginning Blends!</h1>
+            <p id="progress-text" class="text-gray-500 text-xl mb-6">Word 1 of 25</p>
+            <div id="image-container" class="bg-gray-100 rounded-xl p-4 mb-6 h-64 flex items-center justify-center"></div>
+            <div id="word-display" class="text-5xl md:text-7xl font-bold tracking-widest text-gray-800 mb-8 h-24 flex items-center justify-center"></div>
+            <div id="blend-buttons" class="grid grid-cols-3 gap-4 md:gap-6 mb-8"></div>
+            <div id="feedback-container" class="h-14">
+                 <p id="feedback-text" class="text-3xl font-bold"></p>
+            </div>
+            <button id="next-btn" class="hidden w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Next Word</button>
+            <button id="restart-btn" class="hidden w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Play Again?</button>
+        </div>
+
+        <!-- Sentence View -->
+        <div id="sentence-view" class="hidden">
+             <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-8">Read a Sentence!</h1>
+             <div id="sentence-display-container" class="bg-gray-100 rounded-xl p-6 mb-8 min-h-[400px] flex items-center justify-center">
+                <p id="sentence-display" class="text-3xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
+             </div>
+             <button id="new-sentence-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">New Sentence</button>
+        </div>
+        
+        <!-- Blend Sort View -->
+        <div id="sort-view" class="hidden">
+            <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-6">Blend Sort</h1>
+            <div class="grid grid-cols-3 gap-4 text-left">
+                <!-- s-blends column -->
+                <div data-category="s" class="drop-zone bg-lime-100 p-4 rounded-lg">
+                    <h2 class="text-2xl font-bold text-lime-800 text-center mb-4">s-blends</h2>
+                    <div id="s-blends-col" class="sort-column space-y-2"></div>
+                </div>
+                <!-- l-blends column -->
+                <div data-category="l" class="drop-zone bg-cyan-100 p-4 rounded-lg">
+                    <h2 class="text-2xl font-bold text-cyan-800 text-center mb-4">l-blends</h2>
+                    <div id="l-blends-col" class="sort-column space-y-2"></div>
+                </div>
+                <!-- r-blends column -->
+                <div data-category="r" class="drop-zone bg-fuchsia-100 p-4 rounded-lg">
+                    <h2 class="text-2xl font-bold text-fuchsia-800 text-center mb-4">r-blends</h2>
+                    <div id="r-blends-col" class="sort-column space-y-2"></div>
+                </div>
+            </div>
+            <div id="sort-feedback" class="h-14 mt-6">
+                <p id="sort-feedback-text" class="text-3xl font-bold"></p>
+            </div>
+            <div id="word-to-sort-container" class="mt-12 p-6">
+                <p class="text-xl text-gray-600 mb-2">Drag this word:</p>
+                <p id="word-to-sort" class="text-6xl font-bold text-gray-800 inline-block bg-gray-200 px-4 py-2 rounded-lg" draggable="true"></p>
+            </div>
+             <button id="restart-sort-btn" class="hidden mt-6 w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">Play Again?</button>
+        </div>
+        
+        <!-- Passage View -->
+        <div id="passage-view" class="hidden">
+             <h1 class="text-4xl md:text-5xl font-bold text-orange-500 mb-8">Read a Passage</h1>
+             <div id="passage-display-container" class="bg-gray-100 rounded-xl p-8 mb-8 min-h-[400px] flex items-center justify-center text-left">
+                <p id="passage-display" class="text-3xl md:text-4xl text-gray-800 leading-relaxed">Click the button to start!</p>
+             </div>
+             <button id="new-passage-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-lg text-2xl transition">New Passage</button>
+        </div>
+
+    </div>
+    
+    <!-- Fullscreen Button - now fixed to the bottom right -->
+    <button id="fullscreen-btn" class="fixed bottom-6 right-6 bg-white p-3 rounded-full shadow-lg text-gray-500 hover:text-orange-500 hover:scale-110 transition z-50">
+        <svg id="enter-fullscreen-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
+        </svg>
+        <svg id="exit-fullscreen-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-fullscreen-exit hidden" viewBox="0 0 16 16">
+            <path d="M5.5 0a.5.5 0 0 1 .5.5v4A.5.5 0 0 1 5 5h-4a.5.5 0 0 1 0-1h3.5V.5a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v3.5h3.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0v-3.5H.5a.5.5 0 0 1-.5-.5zm10.5.5a.5.5 0 0 1 .5-.5h3.5v-3.5a.5.5 0 0 1 1 0v4a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+    </button>
+
+    <script>
+        // --- DATA ---
+        const words = [
+            // r-blends
+            { word: 'frog', blend: 'fr', category: 'r', partial: 'og', emoji: '🐸', choices: ['fr', 'fl', 'st'] },
+            { word: 'crab', blend: 'cr', category: 'r', partial: 'ab', emoji: '🦀', choices: ['sp', 'cr', 'bl'] },
+            { word: 'drip', blend: 'dr', category: 'r', partial: 'ip', emoji: '💧', choices: ['cl', 'dr', 'sw'] },
+            { word: 'brush', blend: 'br', category: 'r', partial: 'ush', emoji: '🖌️', choices: ['sn', 'br', 'fl'] },
+            { word: 'truck', blend: 'tr', category: 'r', partial: 'uck', emoji: '🚚', choices: ['st', 'tr', 'cl'] },
+            { word: 'dress', blend: 'dr', category: 'r', partial: 'ess', emoji: '👗', choices: ['dr', 'sp', 'tr'] },
+            { word: 'grill', blend: 'gr', category: 'r', partial: 'ill', emoji: '🍔', choices: ['gr', 'gl', 'pl'] },
+            { word: 'brag', blend: 'br', category: 'r', partial: 'ag', emoji: '🏆', choices: ['br', 'cr', 'dr'] },
+            { word: 'trip', blend: 'tr', category: 'r', partial: 'ip', emoji: '⚠️', choices: ['tr', 'tw', 'th'] },
+            // l-blends
+            { word: 'flag', blend: 'fl', category: 'l', partial: 'ag', emoji: '🚩', choices: ['gr', 'fl', 'sm'] },
+            { word: 'plug', blend: 'pl', category: 'l', partial: 'ug', emoji: '🔌', choices: ['pl', 'sp', 'fr'] },
+            { word: 'glass', blend: 'gl', category: 'l', partial: 'ass', emoji: '🥛', choices: ['gl', 'br', 'st'] },
+            { word: 'sled', blend: 'sl', category: 'l', partial: 'ed', emoji: '🛷', choices: ['sl', 'sm', 'st'] },
+            { word: 'clam', blend: 'cl', category: 'l', partial: 'am', emoji: '🦪', choices: ['cl', 'fl', 'gl'] },
+            { word: 'flash', blend: 'fl', category: 'l', partial: 'ash', emoji: '⚡', choices: ['fl', 'fr', 'cl'] },
+            { word: 'flock', blend: 'fl', category: 'l', partial: 'ock', emoji: '🐦', choices: ['fl', 'pl', 'sl'] },
+            // s-blends
+            { word: 'stop', blend: 'st', category: 's', partial: 'op', emoji: '🛑', choices: ['st', 'gl', 'dr'] },
+            { word: 'swim', blend: 'sw', category: 's', partial: 'im', emoji: '🏊', choices: ['tr', 'sw', 'gl'] },
+            { word: 'smell', blend: 'sm', category: 's', partial: 'ell', emoji: '👃', choices: ['sm', 'sn', 'sp'] },
+            { word: 'snack', blend: 'sn', category: 's', partial: 'ack', emoji: '🥨', choices: ['sn', 'sl', 'sw'] },
+            { word: 'spot', blend: 'sp', category: 's', partial: 'ot', emoji: '⚫', choices: ['sp', 'st', 'sk'] },
+            { word: 'twin', blend: 'tw', category: 's', partial: 'in', emoji: '👯', choices: ['tw', 'tr', 'th'] }, // Note: 'tw' often grouped with s-blends
+            { word: 'skip', blend: 'sk', category: 's', partial: 'ip', emoji: '🤸', choices: ['sk', 'sp', 'st'] },
+            { word: 'spin', blend: 'sp', category: 's', partial: 'in', emoji: '💫', choices: ['sp', 'sn', 'sl'] },
+            { word: 'spill', blend: 'sp', category: 's', partial: 'ill', emoji: '💧', choices: ['sp', 'sk', 'sm'] },
+        ];
+        const sentences = [ "The big frog sat on a log.", "The red crab ran on the sand.", "The bus will stop at the red dot.", "The big flag is on a tall stick.", "A wet drip is in the big tub.", "Put the plug in the tub.", "I can swim in the sun and have fun.", "The glass has a big crack in it.", "I will brush the big dog.", "The red truck is stuck in the mud.", "Her red dress has a black spot.", "Dad will grill the hot dogs.", "The sled is fast on the hill.", "I can smell the hot pot.", "I had a fun snack in a bag.", "The dog has a black spot.", "The twin has a red cap.", "Do not brag if you win the match.", "I got a clam from the sand.", "We can skip on the black top.", "The top will spin and spin.", "Do not spill the milk.", "Did you trip on the step?", "I saw a flash from the lamp.", "A flock of birds is in the sky." ];
+        const passages = [
+            "A big frog sat on a log. A drip of rain made the frog slip. The frog had to swim to his truck. The truck was stuck in the mud! The frog had to get help from a crab.",
+            "A twin had a fun trip. She had a red sled and a snack in a bag. She went down a hill. Do not spill the snack! The sled will stop at the end.",
+            "A flock of birds is on the grass. I can smell the wet grass from the rain. A flash of light made the birds skip up. They did not stop. It was fun to spot them.",
+            "A clam sat in the sand. A crab with a big spot on its shell ran past the clam. The crab did not stop. The clam did not brag. It just sat still in the sand.",
+            "My dad took a trip in his big truck. The truck had a red flag on it. We had to stop for gas. It was a fun trip.",
+            "The twin can swim and spin. She will not brag when she wins. She has fun when she can skip and spin.",
+            "I have a new dress. I will use a brush on my hair. Oh no! I got a spot on my dress. I must not spill my milk.",
+            "I got a big clam from the shop. I put the clam in a glass of water. The clam did not swim. It just sat still.",
+            "Dad will grill a fun snack. I can smell the hot dogs on the grill. I will not spill my drink on the grass.",
+            "I got a sled for my birthday. I will go down the hill in a flash. The sled is fast. I will not trip on the run back up."
+        ];
+
+        // --- HTML ELEMENTS ---
+        const mainContainer = document.getElementById('main-container');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const enterFullscreenIcon = document.getElementById('enter-fullscreen-icon');
+        const exitFullscreenIcon = document.getElementById('exit-fullscreen-icon');
+        const gameTab = document.getElementById('game-tab');
+        const sentenceTab = document.getElementById('sentence-tab');
+        const sortTab = document.getElementById('sort-tab');
+        const passageTab = document.getElementById('passage-tab');
+        const gameView = document.getElementById('game-view');
+        const sentenceView = document.getElementById('sentence-view');
+        const sortView = document.getElementById('sort-view');
+        const passageView = document.getElementById('passage-view');
+        
+        // Game View Elements
+        const progressText = document.getElementById('progress-text');
+        const imageContainer = document.getElementById('image-container');
+        const wordDisplay = document.getElementById('word-display');
+        const blendButtonsContainer = document.getElementById('blend-buttons');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Sentence View Elements
+        const sentenceDisplay = document.getElementById('sentence-display');
+        const newSentenceBtn = document.getElementById('new-sentence-btn');
+        
+        // Sort View Elements
+        const dropZones = document.querySelectorAll('.drop-zone');
+        const wordToSortContainer = document.getElementById('word-to-sort-container');
+        const wordToSort = document.getElementById('word-to-sort');
+        const sortFeedbackText = document.getElementById('sort-feedback-text');
+        const restartSortBtn = document.getElementById('restart-sort-btn');
+        
+        // Passage View Elements
+        const passageDisplay = document.getElementById('passage-display');
+        const newPassageBtn = document.getElementById('new-passage-btn');
+
+        // --- GAME STATE ---
+        let currentWordIndex = 0;
+        let shuffledWords = [];
+        let isChecking = false;
+        let sortableWords = [];
+        let currentSortWord = null;
+
+        // --- SOUNDS ---
+        const correctSound = new Tone.Synth().toDestination();
+        const incorrectSound = new Tone.Synth().toDestination();
+
+        // --- TABS LOGIC ---
+        function setupTabs() {
+            const tabs = [gameTab, sentenceTab, sortTab, passageTab];
+            const views = [gameView, sentenceView, sortView, passageView];
+            const activeClasses = ['border-orange-500', 'text-orange-500'];
+            const inactiveClasses = ['border-transparent', 'text-gray-500'];
+
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => {
+                    if (Tone.context.state !== 'running') {
+                        Tone.start();
+                    }
+                    tabs.forEach(t => {
+                        t.classList.remove(...activeClasses);
+                        t.classList.add(...inactiveClasses);
+                    });
+                    views.forEach(v => v.classList.add('hidden'));
+                    
+                    tab.classList.add(...activeClasses);
+                    tab.classList.remove(...inactiveClasses);
+                    views[index].classList.remove('hidden');
+                });
+            });
+            // Set initial active tab
+            gameTab.classList.add(...activeClasses);
+            gameTab.classList.remove(...inactiveClasses);
+        }
+
+        // --- GAME 1: BEGINNING BLENDS ---
+        function startGame() {
+            currentWordIndex = 0;
+            isChecking = false;
+            shuffledWords = [...words];
+            shuffleArray(shuffledWords);
+            nextBtn.classList.add('hidden');
+            restartBtn.classList.add('hidden');
+            blendButtonsContainer.classList.remove('hidden');
+            feedbackText.textContent = '';
+            loadWord();
+        }
+
+        function loadWord() {
+            if (currentWordIndex >= shuffledWords.length) {
+                endGame();
+                return;
+            }
+            isChecking = false;
+            const currentWord = shuffledWords[currentWordIndex];
+            progressText.textContent = `Word ${currentWordIndex + 1} of ${shuffledWords.length}`;
+            imageContainer.innerHTML = `<div class="emoji-image">${currentWord.emoji}</div>`;
+            wordDisplay.textContent = `__${currentWord.partial}`;
+            wordDisplay.classList.remove('pulse');
+            feedbackText.textContent = '';
+            feedbackText.classList.remove('text-green-500', 'text-red-500');
+            nextBtn.classList.add('hidden');
+            blendButtonsContainer.innerHTML = '';
+            const choices = [...currentWord.choices];
+            shuffleArray(choices);
+            choices.forEach(blend => {
+                const button = document.createElement('button');
+                button.textContent = blend;
+                button.dataset.blend = blend;
+                button.className = 'blend-btn bg-purple-500 hover:bg-purple-600 text-white text-4xl font-bold rounded-lg p-6 transition-transform transform hover:scale-110';
+                button.addEventListener('click', handleBlendClick);
+                blendButtonsContainer.appendChild(button);
+            });
+        }
+
+        function handleBlendClick(event) {
+            if (isChecking) return;
+            isChecking = true;
+            const selectedBlend = event.target.dataset.blend;
+            const correctBlend = shuffledWords[currentWordIndex].blend;
+            if (selectedBlend === correctBlend) {
+                correctSound.triggerAttackRelease("C5", "8n");
+                wordDisplay.textContent = shuffledWords[currentWordIndex].word;
+                wordDisplay.classList.add('pulse');
+                feedbackText.textContent = 'Correct!';
+                feedbackText.classList.add('text-green-500');
+                feedbackText.classList.remove('text-red-500');
+                nextBtn.classList.remove('hidden');
+                document.querySelectorAll('.blend-btn').forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50');
+                });
+            } else {
+                incorrectSound.triggerAttackRelease("C3", "8n");
+                feedbackText.textContent = 'Try Again!';
+                feedbackText.classList.add('text-red-500');
+                feedbackText.classList.remove('text-green-500');
+                event.target.closest('#game-view').classList.add('shake');
+                event.target.disabled = true;
+                event.target.classList.add('opacity-50', 'cursor-not-allowed', 'bg-red-400', 'hover:bg-red-400');
+                event.target.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                setTimeout(() => {
+                    isChecking = false;
+                    event.target.closest('#game-view').classList.remove('shake');
+                }, 500);
+            }
+        }
+
+        function endGame() {
+            imageContainer.innerHTML = `<div class="emoji-image">🎉</div>`;
+            wordDisplay.textContent = 'Awesome!';
+            progressText.textContent = `You finished all the blends!`;
+            feedbackText.textContent = '';
+            blendButtonsContainer.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            restartBtn.classList.remove('hidden');
+        }
+
+        // --- GAME 2: SENTENCES ---
+        function generateSentence() {
+            const randomIndex = Math.floor(Math.random() * sentences.length);
+            let sentence = sentences[randomIndex];
+            const blendWords = words.map(w => w.word);
+            blendWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                sentence = sentence.replace(regex, `<strong class="text-orange-500">${word}</strong>`);
+            });
+            sentenceDisplay.innerHTML = sentence;
+        }
+
+        // --- GAME 3: BLEND SORT (DRAG & DROP) ---
+        function startSortGame() {
+            sortableWords = [...words];
+            shuffleArray(sortableWords);
+            dropZones.forEach(zone => {
+                zone.querySelector('.sort-column').innerHTML = '';
+            });
+            sortFeedbackText.textContent = '';
+            restartSortBtn.classList.add('hidden');
+            wordToSortContainer.classList.remove('hidden');
+            loadNextSortWord();
+        }
+
+        function loadNextSortWord() {
+            sortFeedbackText.textContent = '';
+            if (sortableWords.length === 0) {
+                endSortGame();
+                return;
+            }
+            currentSortWord = sortableWords.pop();
+            wordToSort.textContent = currentSortWord.word;
+            wordToSort.classList.remove('hidden');
+        }
+
+        wordToSort.addEventListener('dragstart', (e) => {
+            e.target.classList.add('dragging');
+        });
+
+        wordToSort.addEventListener('dragend', (e) => {
+            e.target.classList.remove('dragging');
+        });
+
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', e => {
+                e.preventDefault(); 
+                zone.classList.add('drag-over');
+            });
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                if (!currentSortWord) return;
+                const dropCategory = zone.dataset.category;
+                if (dropCategory === currentSortWord.category) {
+                    correctSound.triggerAttackRelease("C5", "8n");
+                    sortFeedbackText.textContent = 'Correct!';
+                    sortFeedbackText.classList.add('text-green-500');
+                    sortFeedbackText.classList.remove('text-red-500');
+                    addWordToSortColumn(currentSortWord, zone);
+                    wordToSort.classList.add('hidden');
+                    setTimeout(loadNextSortWord, 1000);
+                } else {
+                    incorrectSound.triggerAttackRelease("C3", "8n");
+                    sortFeedbackText.textContent = 'Try Again!';
+                    sortFeedbackText.classList.add('text-red-500');
+                    sortFeedbackText.classList.remove('text-green-500');
+                    sortView.classList.add('shake');
+                    setTimeout(() => sortView.classList.remove('shake'), 500);
+                }
+            });
+        });
+        
+        function addWordToSortColumn(word, zone) {
+            const wordEl = document.createElement('div');
+            wordEl.textContent = word.word;
+            wordEl.className = 'sorted-word bg-white text-gray-800 text-2xl font-semibold p-3 rounded-lg shadow text-center';
+            zone.querySelector('.sort-column').appendChild(wordEl);
+        }
+
+        function endSortGame() {
+            wordToSort.textContent = '🎉';
+            sortFeedbackText.textContent = 'All sorted!';
+            sortFeedbackText.classList.add('text-green-500');
+            restartSortBtn.classList.remove('hidden');
+            wordToSortContainer.classList.add('hidden');
+        }
+        
+        // --- GAME 4: PASSAGES ---
+        function generatePassage() {
+            const randomIndex = Math.floor(Math.random() * passages.length);
+            let passage = passages[randomIndex];
+            const blendWords = words.map(w => w.word);
+            blendWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                passage = passage.replace(regex, `<strong class="text-orange-500">${word}</strong>`);
+            });
+            passageDisplay.innerHTML = passage;
+        }
+
+        // --- FULLSCREEN LOGIC (ROBUST VERSION) ---
+        function toggleFullScreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari, Chrome, Opera */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE/Edge */
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari, Chrome, Opera */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        function updateFullscreenIcons() {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                enterFullscreenIcon.classList.add('hidden');
+                exitFullscreenIcon.classList.remove('hidden');
+            } else {
+                enterFullscreenIcon.classList.remove('hidden');
+                exitFullscreenIcon.classList.add('hidden');
+            }
+        }
+
+        // --- UTILITY ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        nextBtn.addEventListener('click', () => { currentWordIndex++; loadWord(); });
+        restartBtn.addEventListener('click', startGame);
+        newSentenceBtn.addEventListener('click', generateSentence);
+        restartSortBtn.addEventListener('click', startSortGame);
+        newPassageBtn.addEventListener('click', generatePassage);
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        
+        // Listen for all possible fullscreen change events
+        document.addEventListener('fullscreenchange', updateFullscreenIcons);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenIcons);
+        document.addEventListener('msfullscreenchange', updateFullscreenIcons);
+        
+        // --- INITIALIZE ---
+        window.onload = () => {
+            setupTabs();
+            startGame();
+            startSortGame();
+            generateSentence(); // Load a sentence on start
+            generatePassage(); // Load a passage on start
+        };
+
+    </script>
+</body>
+</html>
+
+
