@@ -339,7 +339,7 @@
                 const button = document.createElement('button');
                 button.textContent = blend;
                 button.dataset.blend = blend;
-                button.className = 'blend-btn bg-purple-500 hover:bg-purple-600 text-white text-4xl font-bold rounded-lg p-6 transition-transform transform hover:scale-110';
+                button.className = 'blend-btn bg-purple-500 hover:bg-purple-600 text-white text-4xl font-bold rounded-lg p-4 transition-transform transform hover:scale-110';
                 button.addEventListener('click', handleBlendClick);
                 blendButtonsContainer.appendChild(button);
             });
@@ -467,7 +467,7 @@
         function addWordToSortColumn(word, zone) {
             const wordEl = document.createElement('div');
             wordEl.textContent = word.word;
-            wordEl.className = 'sorted-word bg-white text-gray-800 text-2xl font-semibold p-3 rounded-lg shadow text-center';
+            wordEl.className = 'sorted-word bg-white text-gray-800 text-2xl font-semibold p-2 rounded-lg shadow text-center';
             zone.querySelector('.sort-column').appendChild(wordEl);
         }
 
@@ -494,32 +494,20 @@
         // --- FULLSCREEN LOGIC (ROBUST VERSION) ---
         function toggleFullScreen() {
             const elem = document.documentElement;
-            const promise = elem.requestFullscreen ? elem.requestFullscreen() : 
-                            elem.webkitRequestFullscreen ? elem.webkitRequestFullscreen() : 
-                            elem.msRequestFullscreen ? elem.msRequestFullscreen() : 
-                            null;
-
-            if (promise) {
-                promise.catch(err => {
-                    // If fullscreen fails (like in an iframe), open in a new tab.
-                    console.warn("Fullscreen request failed, likely due to iframe restrictions. Opening in new tab as a fallback.", err);
-                    window.open(window.location.href, '_blank');
-                });
-            } else if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                 // Fallback for browsers that don't return a promise
-                 window.open(window.location.href, '_blank');
-            }
-
-            if (document.exitFullscreen) {
-                if (document.fullscreenElement) {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari, Chrome, Opera */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE/Edge */
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
                     document.exitFullscreen();
-                }
-            } else if (document.webkitExitFullscreen) {
-                if (document.webkitFullscreenElement) {
+                } else if (document.webkitExitFullscreen) { /* Safari, Chrome, Opera */
                     document.webkitExitFullscreen();
-                }
-            } else if (document.msExitFullscreen) {
-                if (document.msFullscreenElement) {
+                } else if (document.msExitFullscreen) { /* IE/Edge */
                     document.msExitFullscreen();
                 }
             }
